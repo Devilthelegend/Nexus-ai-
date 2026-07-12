@@ -7,12 +7,11 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install dependencies first for better layer caching.
-COPY pyproject.toml ./
-RUN pip install --upgrade pip && pip install .
-
-# Copy application source.
+# Copy build metadata and source, then install the package and its deps.
+# hatchling needs README.md (project.readme) and the app package present.
+COPY pyproject.toml README.md ./
 COPY app ./app
+RUN pip install --upgrade pip && pip install .
 
 EXPOSE 8000
 
