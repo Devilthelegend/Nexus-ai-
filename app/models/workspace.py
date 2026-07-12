@@ -23,9 +23,7 @@ class Workspace(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
     owner_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="RESTRICT"), nullable=False
     )
-    plan: Mapped[str] = mapped_column(
-        String(50), default="free", nullable=False
-    )
+    plan: Mapped[str] = mapped_column(String(50), default="free", nullable=False)
 
     memberships: Mapped[list[Membership]] = relationship(
         back_populates="workspace", cascade="all, delete-orphan"

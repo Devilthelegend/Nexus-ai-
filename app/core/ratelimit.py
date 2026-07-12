@@ -10,9 +10,10 @@ on each request so they can be tuned (and tested) without rebuilding the app.
 import hashlib
 import time
 
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
+from starlette.types import ASGIApp
 
 from app.core.config import get_settings
 from app.core.errors import error_body
@@ -30,7 +31,7 @@ _EXEMPT_PREFIXES = (
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """Cap requests per client within a fixed time window."""
 
-    def __init__(self, app) -> None:  # noqa: ANN001 - Starlette app callable
+    def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
         self._hits: dict[str, tuple[int, int]] = {}
 
@@ -43,7 +44,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         client = request.client
         return f"ip:{client.host if client else 'unknown'}"
 
-    async def dispatch(self, request: Request, call_next) -> Response:  # noqa: ANN001
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         settings = get_settings()
         path = request.url.path
         if not settings.rate_limit_enabled or path.startswith(_EXEMPT_PREFIXES):

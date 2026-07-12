@@ -114,13 +114,9 @@ def _fuse(*ranked: Sequence[RetrievedChunk]) -> list[RetrievedChunk]:
     scores: dict[str, float] = {}
     for chunks in ranked:
         for rank, chunk in enumerate(chunks):
-            scores[chunk.chunk_id] = scores.get(chunk.chunk_id, 0.0) + 1.0 / (
-                _RRF_K + rank + 1
-            )
+            scores[chunk.chunk_id] = scores.get(chunk.chunk_id, 0.0) + 1.0 / (_RRF_K + rank + 1)
             fused.setdefault(chunk.chunk_id, chunk)
-    ordered = sorted(
-        fused.values(), key=lambda c: scores[c.chunk_id], reverse=True
-    )
+    ordered = sorted(fused.values(), key=lambda c: scores[c.chunk_id], reverse=True)
     for chunk in ordered:
         chunk.score = scores[chunk.chunk_id]
     return ordered
@@ -171,12 +167,8 @@ async def retrieve(
 ) -> RetrievalResult:
     """Run hybrid retrieval and return budgeted context with citations."""
     settings = settings or get_settings()
-    dense = await _dense(
-        embedder, store, workspace_id, query, settings.retrieval_top_k
-    )
-    keyword = await _keyword(
-        db, workspace_id, query, settings.retrieval_top_k
-    )
+    dense = await _dense(embedder, store, workspace_id, query, settings.retrieval_top_k)
+    keyword = await _keyword(db, workspace_id, query, settings.retrieval_top_k)
     fused = _fuse(dense, keyword)
     top = _rerank(query, fused, settings.rerank_top_k)
     return _assemble(top, settings.context_token_budget)

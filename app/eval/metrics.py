@@ -16,9 +16,7 @@ def recall_at_k(retrieved: Sequence[str], relevant: set[str], k: int) -> float:
     return len(top & relevant) / len(relevant)
 
 
-def precision_at_k(
-    retrieved: Sequence[str], relevant: set[str], k: int
-) -> float:
+def precision_at_k(retrieved: Sequence[str], relevant: set[str], k: int) -> float:
     """Fraction of the top-``k`` retrieved ids that are relevant."""
     if k <= 0:
         return 0.0

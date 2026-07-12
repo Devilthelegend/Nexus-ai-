@@ -32,13 +32,9 @@ async def upload_document(
     settings = get_settings()
     data = await file.read()
     if not data:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST, "Uploaded file is empty"
-        )
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Uploaded file is empty")
     if len(data) > settings.max_upload_bytes:
-        raise HTTPException(
-            status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "File too large"
-        )
+        raise HTTPException(status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, "File too large")
 
     try:
         document = await document_service.create_document(
@@ -53,9 +49,7 @@ async def upload_document(
             settings=settings,
         )
     except NotFoundError as exc:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, "Workspace not found"
-        ) from exc
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Workspace not found") from exc
     return DocumentRead.model_validate(document)
 
 
@@ -65,13 +59,9 @@ async def list_documents(
 ) -> list[DocumentRead]:
     """List non-deleted documents in a workspace the caller can access."""
     try:
-        items = await document_service.list_for_workspace(
-            db, workspace_id, current_user.id
-        )
+        items = await document_service.list_for_workspace(db, workspace_id, current_user.id)
     except NotFoundError as exc:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, "Workspace not found"
-        ) from exc
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Workspace not found") from exc
     return [DocumentRead.model_validate(d) for d in items]
 
 

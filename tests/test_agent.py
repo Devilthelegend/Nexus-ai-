@@ -22,12 +22,8 @@ def isolate_agent(tmp_path, monkeypatch):
 
 
 async def _workspace(client: AsyncClient, email: str) -> dict[str, object]:
-    await client.post(
-        f"{_AUTH}/register", json={"email": email, "password": _PASSWORD}
-    )
-    login = await client.post(
-        f"{_AUTH}/login", json={"email": email, "password": _PASSWORD}
-    )
+    await client.post(f"{_AUTH}/register", json={"email": email, "password": _PASSWORD})
+    login = await client.post(f"{_AUTH}/login", json={"email": email, "password": _PASSWORD})
     headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
     ws = await client.post(_WS, json={"name": "KB"}, headers=headers)
     return {"workspace_id": ws.json()["id"], "headers": headers}
@@ -46,9 +42,7 @@ def _conv_url(ws) -> str:
 
 
 async def _start(client, ws) -> str:
-    created = await client.post(
-        _conv_url(ws), json={"title": "Agent"}, headers=ws["headers"]
-    )
+    created = await client.post(_conv_url(ws), json={"title": "Agent"}, headers=ws["headers"])
     assert created.status_code == 201, created.text
     return created.json()["id"]
 
@@ -96,9 +90,7 @@ async def test_agent_run_persists_conversation_turns(client: AsyncClient) -> Non
         json={"objective": "How often does Nexus ship updates?"},
         headers=ws["headers"],
     )
-    history = await client.get(
-        f"{_conv_url(ws)}/{conv_id}/messages", headers=ws["headers"]
-    )
+    history = await client.get(f"{_conv_url(ws)}/{conv_id}/messages", headers=ws["headers"])
     roles = [m["role"] for m in history.json()]
     assert roles == ["user", "assistant"]
 
@@ -136,15 +128,11 @@ async def test_agent_list_and_get_runs(client: AsyncClient) -> None:
     assert listed.status_code == 200
     assert [r["id"] for r in listed.json()] == [run_id]
 
-    fetched = await client.get(
-        f"{_agent_url(ws, conv_id)}/{run_id}", headers=ws["headers"]
-    )
+    fetched = await client.get(f"{_agent_url(ws, conv_id)}/{run_id}", headers=ws["headers"])
     assert fetched.status_code == 200
     assert fetched.json()["id"] == run_id
 
-    missing = await client.get(
-        f"{_agent_url(ws, conv_id)}/{conv_id}", headers=ws["headers"]
-    )
+    missing = await client.get(f"{_agent_url(ws, conv_id)}/{conv_id}", headers=ws["headers"])
     assert missing.status_code == 404
 
 
@@ -160,7 +148,5 @@ async def test_agent_run_tenant_isolation(client: AsyncClient) -> None:
     )
     assert blocked.status_code == 404
 
-    hidden = await client.get(
-        _agent_url(owner, conv_id), headers=outsider["headers"]
-    )
+    hidden = await client.get(_agent_url(owner, conv_id), headers=outsider["headers"])
     assert hidden.status_code == 404

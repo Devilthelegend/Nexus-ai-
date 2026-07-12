@@ -11,7 +11,17 @@ from functools import lru_cache
 
 CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8"
 _DEFAULT_BUCKETS = (
-    0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,
+    0.005,
+    0.01,
+    0.025,
+    0.05,
+    0.1,
+    0.25,
+    0.5,
+    1.0,
+    2.5,
+    5.0,
+    10.0,
 )
 
 _Labels = tuple[tuple[str, str], ...]
@@ -117,24 +127,14 @@ class MetricsRegistry:
     """The application's collectors plus a text-format renderer."""
 
     def __init__(self) -> None:
-        self.http_requests = Counter(
-            "nexus_http_requests_total", "Total HTTP requests."
-        )
-        self.http_errors = Counter(
-            "nexus_http_errors_total", "Total HTTP 5xx responses."
-        )
-        self.http_in_flight = Gauge(
-            "nexus_http_requests_in_flight", "In-flight HTTP requests."
-        )
+        self.http_requests = Counter("nexus_http_requests_total", "Total HTTP requests.")
+        self.http_errors = Counter("nexus_http_errors_total", "Total HTTP 5xx responses.")
+        self.http_in_flight = Gauge("nexus_http_requests_in_flight", "In-flight HTTP requests.")
         self.http_duration = Histogram(
             "nexus_http_request_duration_seconds", "HTTP request duration (s)."
         )
-        self.llm_tokens = Counter(
-            "nexus_llm_tokens_total", "Total LLM tokens processed."
-        )
-        self.llm_cost_usd = Counter(
-            "nexus_llm_cost_usd_total", "Total estimated LLM cost (USD)."
-        )
+        self.llm_tokens = Counter("nexus_llm_tokens_total", "Total LLM tokens processed.")
+        self.llm_cost_usd = Counter("nexus_llm_cost_usd_total", "Total estimated LLM cost (USD).")
         self._collectors = (
             self.http_requests,
             self.http_errors,

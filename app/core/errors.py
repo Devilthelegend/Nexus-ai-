@@ -30,7 +30,7 @@ _STATUS_CODES = {
 }
 
 
-def error_body(code: str, message: str, details: object | None = None) -> dict:
+def error_body(code: str, message: str, details: object | None = None) -> dict[str, object]:
     """Build the standard error envelope for the current request."""
     return {
         "code": code,
@@ -46,9 +46,7 @@ def _code_for(status_code: int) -> str:
     return "server_error" if status_code >= 500 else "http_error"
 
 
-async def _http_exception_handler(
-    request: Request, exc: StarletteHTTPException
-) -> JSONResponse:
+async def _http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
     return JSONResponse(
         status_code=exc.status_code,
         content=error_body(_code_for(exc.status_code), str(exc.detail)),
@@ -69,9 +67,7 @@ async def _validation_exception_handler(
     )
 
 
-async def _unhandled_exception_handler(
-    request: Request, exc: Exception
-) -> JSONResponse:
+async def _unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     _logger.exception("unhandled exception")
     return JSONResponse(
         status_code=500,
@@ -81,8 +77,6 @@ async def _unhandled_exception_handler(
 
 def install_error_handlers(app: FastAPI) -> None:
     """Register the envelope handlers on the application."""
-    app.add_exception_handler(StarletteHTTPException, _http_exception_handler)
-    app.add_exception_handler(
-        RequestValidationError, _validation_exception_handler
-    )
+    app.add_exception_handler(StarletteHTTPException, _http_exception_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(RequestValidationError, _validation_exception_handler)  # type: ignore[arg-type]
     app.add_exception_handler(Exception, _unhandled_exception_handler)

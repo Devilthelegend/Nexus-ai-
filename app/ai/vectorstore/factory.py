@@ -26,8 +26,6 @@ def get_vector_store(settings: Settings | None = None) -> VectorStore:
     if backend == "qdrant":
         from app.ai.vectorstore.qdrant import QdrantVectorStore
 
-        return QdrantVectorStore(
-            url=settings.qdrant_url, collection=settings.qdrant_collection
-        )
+        return QdrantVectorStore(url=settings.qdrant_url, collection=settings.qdrant_collection)
 
     raise ValueError(f"Unsupported vector backend: {backend!r}")

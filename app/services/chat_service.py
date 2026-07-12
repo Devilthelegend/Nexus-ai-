@@ -64,13 +64,9 @@ async def generate_answer(
     query_vector: list[float] | None = None
     if cache is not None:
         (query_vector,) = await embedder.embed([message])
-        hit = cache.lookup(
-            workspace_id, query_vector, settings.semantic_cache_threshold
-        )
+        hit = cache.lookup(workspace_id, query_vector, settings.semantic_cache_threshold)
         if hit is not None:
-            return await _persist_assistant(
-                db, conversation_id, hit.answer, hit.citations
-            )
+            return await _persist_assistant(db, conversation_id, hit.answer, hit.citations)
 
     result = await retrieval.retrieve(
         db,
@@ -81,9 +77,7 @@ async def generate_answer(
         settings=settings,
     )
     system = _SYSTEM_TEMPLATE.format(context=result.context or "(none)")
-    completion = await llm.complete(
-        [LLMMessage("system", system), LLMMessage("user", message)]
-    )
+    completion = await llm.complete([LLMMessage("system", system), LLMMessage("user", message)])
     record_llm_usage(
         completion.total_tokens,
         completion.total_tokens / 1000 * settings.llm_cost_per_1k_tokens,
@@ -96,9 +90,7 @@ async def generate_answer(
             CachedAnswer(answer=completion.text, citations=result.citations),
         )
 
-    return await _persist_assistant(
-        db, conversation_id, completion.text, result.citations
-    )
+    return await _persist_assistant(db, conversation_id, completion.text, result.citations)
 
 
 async def _persist_assistant(
@@ -162,9 +154,7 @@ async def stream_answer(
     system = _SYSTEM_TEMPLATE.format(context=result.context or "(none)")
 
     parts: list[str] = []
-    async for delta in llm.stream(
-        [LLMMessage("system", system), LLMMessage("user", message)]
-    ):
+    async for delta in llm.stream([LLMMessage("system", system), LLMMessage("user", message)]):
         parts.append(delta)
         yield {"type": "token", "text": delta}
 

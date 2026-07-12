@@ -56,9 +56,7 @@ class InMemoryVectorStore:
         scored.sort(key=lambda result: result.score, reverse=True)
         return scored[:limit]
 
-    async def delete_by_document(
-        self, workspace_id: uuid.UUID, document_id: uuid.UUID
-    ) -> None:
+    async def delete_by_document(self, workspace_id: uuid.UUID, document_id: uuid.UUID) -> None:
         to_delete = [
             key
             for key, record in self._records.items()

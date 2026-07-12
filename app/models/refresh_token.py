@@ -27,12 +27,8 @@ class RefreshToken(Base, UUIDMixin, TimestampMixin):
         index=True,
         nullable=False,
     )
-    jti: Mapped[uuid.UUID] = mapped_column(
-        Uuid, unique=True, index=True, nullable=False
-    )
-    expires_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False
-    )
+    jti: Mapped[uuid.UUID] = mapped_column(Uuid, unique=True, index=True, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True, default=None
     )

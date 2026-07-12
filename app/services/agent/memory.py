@@ -99,9 +99,7 @@ def get_agent_memory() -> AgentMemory:
     return AgentMemory(max_entries=get_settings().agent_long_term_max_entries)
 
 
-def format_memory_block(
-    short_term: list[tuple[str, str]], long_term: list[str]
-) -> str:
+def format_memory_block(short_term: list[tuple[str, str]], long_term: list[str]) -> str:
     """Render recalled memory as a read-only prompt section (or empty)."""
     parts: list[str] = []
     if long_term:

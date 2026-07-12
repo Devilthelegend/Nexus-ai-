@@ -5,7 +5,7 @@ clickjacking, referrer, permissions and transport security). Values are set only
 when absent so route-specific overrides are respected. Toggle via settings.
 """
 
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -25,7 +25,7 @@ _HEADERS = {
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """Attach standard security headers to outgoing responses."""
 
-    async def dispatch(self, request: Request, call_next) -> Response:  # noqa: ANN001
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         response = await call_next(request)
         if get_settings().security_headers_enabled:
             for header, value in _HEADERS.items():

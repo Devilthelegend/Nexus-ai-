@@ -31,9 +31,7 @@ class OpenAILLMProvider:
         max_tokens: int | None = None,
     ) -> None:
         if not api_key:
-            raise ValueError(
-                "OpenAI provider requires an API key (set LLM_API_KEY)."
-            )
+            raise ValueError("OpenAI provider requires an API key (set LLM_API_KEY).")
         self._model = model
         self._api_key = api_key
         self._base_url = base_url.rstrip("/")
@@ -54,14 +52,10 @@ class OpenAILLMProvider:
             "Content-Type": "application/json",
         }
 
-    def _payload(
-        self, messages: Sequence[LLMMessage], *, stream: bool
-    ) -> dict[str, object]:
+    def _payload(self, messages: Sequence[LLMMessage], *, stream: bool) -> dict[str, object]:
         payload: dict[str, object] = {
             "model": self._model,
-            "messages": [
-                {"role": m.role, "content": m.content} for m in messages
-            ],
+            "messages": [{"role": m.role, "content": m.content} for m in messages],
             "temperature": self._temperature,
             "stream": stream,
         }
@@ -88,9 +82,7 @@ class OpenAILLMProvider:
             completion_tokens=int(usage.get("completion_tokens", 0)),
         )
 
-    async def stream(
-        self, messages: Sequence[LLMMessage]
-    ) -> AsyncIterator[str]:
+    async def stream(self, messages: Sequence[LLMMessage]) -> AsyncIterator[str]:
         async with (
             httpx.AsyncClient(timeout=_TIMEOUT) as client,
             client.stream(

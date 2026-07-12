@@ -12,17 +12,13 @@ from app.services.exceptions import EmailAlreadyExists, InvalidCredentials
 
 async def get_by_email(db: AsyncSession, email: str) -> User | None:
     """Return an active user by email, or ``None``."""
-    result = await db.execute(
-        select(User).where(User.email == email, User.deleted_at.is_(None))
-    )
+    result = await db.execute(select(User).where(User.email == email, User.deleted_at.is_(None)))
     return result.scalar_one_or_none()
 
 
 async def get_by_id(db: AsyncSession, user_id: uuid.UUID) -> User | None:
     """Return an active user by id, or ``None``."""
-    result = await db.execute(
-        select(User).where(User.id == user_id, User.deleted_at.is_(None))
-    )
+    result = await db.execute(select(User).where(User.id == user_id, User.deleted_at.is_(None)))
     return result.scalar_one_or_none()
 
 

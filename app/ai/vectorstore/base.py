@@ -50,8 +50,6 @@ class VectorStore(Protocol):
         """Return the most similar vectors within a workspace."""
         ...
 
-    async def delete_by_document(
-        self, workspace_id: uuid.UUID, document_id: uuid.UUID
-    ) -> None:
+    async def delete_by_document(self, workspace_id: uuid.UUID, document_id: uuid.UUID) -> None:
         """Remove all vectors belonging to a document."""
         ...

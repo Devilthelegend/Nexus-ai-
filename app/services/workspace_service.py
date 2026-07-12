@@ -21,11 +21,7 @@ async def create_workspace(db: AsyncSession, name: str, owner: User) -> Workspac
     db.add(workspace)
     await db.flush()
 
-    db.add(
-        Membership(
-            user_id=owner.id, workspace_id=workspace.id, role=Role.OWNER
-        )
-    )
+    db.add(Membership(user_id=owner.id, workspace_id=workspace.id, role=Role.OWNER))
     await db.commit()
     await db.refresh(workspace)
     return workspace
@@ -54,9 +50,7 @@ async def get_membership(
     return result.scalar_one_or_none()
 
 
-async def get_for_user(
-    db: AsyncSession, workspace_id: uuid.UUID, user_id: uuid.UUID
-) -> Workspace:
+async def get_for_user(db: AsyncSession, workspace_id: uuid.UUID, user_id: uuid.UUID) -> Workspace:
     """Return a workspace only if the user is a member (tenant isolation)."""
     if await get_membership(db, workspace_id, user_id) is None:
         raise NotFoundError("workspace")
@@ -87,9 +81,7 @@ async def add_member(
         await db.refresh(existing)
         return existing
 
-    membership = Membership(
-        user_id=user_id, workspace_id=workspace_id, role=role
-    )
+    membership = Membership(user_id=user_id, workspace_id=workspace_id, role=role)
     db.add(membership)
     await db.commit()
     await db.refresh(membership)

@@ -116,9 +116,7 @@ async def run_ingestion(
         document.error = str(exc)
         document.chunk_count = 0
         await db.commit()
-        logger.warning(
-            "ingestion failed for document %s: %s", document_id, exc
-        )
+        logger.warning("ingestion failed for document %s: %s", document_id, exc)
 
     await db.refresh(document)
     return document

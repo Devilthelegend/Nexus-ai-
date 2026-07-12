@@ -44,8 +44,6 @@ class LLMProvider(Protocol):
         """Return a full completion for the given chat messages."""
         ...
 
-    def stream(
-        self, messages: Sequence[LLMMessage]
-    ) -> AsyncIterator[str]:
+    def stream(self, messages: Sequence[LLMMessage]) -> AsyncIterator[str]:
         """Yield the completion incrementally as text deltas."""
         ...

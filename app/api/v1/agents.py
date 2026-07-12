@@ -5,6 +5,7 @@ import uuid
 from fastapi import APIRouter, HTTPException, status
 
 from app.api.deps import LLM, CurrentUser, DbSession, Embedder, Vectors
+from app.models.conversation import Conversation
 from app.models.message import Message
 from app.schemas.agent import AgentRunRead, AgentRunRequest, AgentRunResponse
 from app.schemas.conversation import MessageRead
@@ -26,15 +27,13 @@ async def _require_conversation(
     workspace_id: uuid.UUID,
     conversation_id: uuid.UUID,
     current_user: CurrentUser,
-):
+) -> Conversation:
     try:
         return await conversation_service.get_for_user(
             db, workspace_id, conversation_id, current_user.id
         )
     except NotFoundError as exc:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, _CONV_NOT_FOUND
-        ) from exc
+        raise HTTPException(status.HTTP_404_NOT_FOUND, _CONV_NOT_FOUND) from exc
 
 
 @router.post(
@@ -53,9 +52,7 @@ async def create_run(
     llm: LLM,
 ) -> AgentRunResponse:
     """Run the agent against the conversation's knowledge base."""
-    conversation = await _require_conversation(
-        db, workspace_id, conversation_id, current_user
-    )
+    conversation = await _require_conversation(db, workspace_id, conversation_id, current_user)
     run = await orchestrator.run_agent(
         db,
         conversation=conversation,
@@ -80,9 +77,7 @@ async def list_runs(
     current_user: CurrentUser,
 ) -> list[AgentRunRead]:
     """List the agent runs recorded for a conversation."""
-    await _require_conversation(
-        db, workspace_id, conversation_id, current_user
-    )
+    await _require_conversation(db, workspace_id, conversation_id, current_user)
     runs = await orchestrator.list_runs(db, conversation_id)
     return [AgentRunRead.model_validate(r) for r in runs]
 
@@ -96,9 +91,7 @@ async def get_run(
     current_user: CurrentUser,
 ) -> AgentRunRead:
     """Retrieve a single agent run."""
-    await _require_conversation(
-        db, workspace_id, conversation_id, current_user
-    )
+    await _require_conversation(db, workspace_id, conversation_id, current_user)
     run = await orchestrator.get_run(db, conversation_id, run_id)
     if run is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, _RUN_NOT_FOUND)

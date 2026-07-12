@@ -5,9 +5,7 @@ from httpx import AsyncClient
 _PREFIX = "/api/v1/auth"
 
 
-async def _register(
-    client: AsyncClient, email: str, password: str = "s3cret-password"
-) -> None:
+async def _register(client: AsyncClient, email: str, password: str = "s3cret-password") -> None:
     response = await client.post(
         f"{_PREFIX}/register",
         json={"email": email, "password": password, "full_name": "Test User"},
@@ -77,9 +75,7 @@ async def test_refresh_issues_new_tokens(client: AsyncClient) -> None:
     )
     refresh_token = login.json()["refresh_token"]
 
-    response = await client.post(
-        f"{_PREFIX}/refresh", json={"refresh_token": refresh_token}
-    )
+    response = await client.post(f"{_PREFIX}/refresh", json={"refresh_token": refresh_token})
     assert response.status_code == 200
     body = response.json()
     assert body["access_token"]
@@ -95,16 +91,12 @@ async def test_refresh_rejects_access_token(client: AsyncClient) -> None:
     access_token = login.json()["access_token"]
 
     # An access token must not be accepted where a refresh token is required.
-    response = await client.post(
-        f"{_PREFIX}/refresh", json={"refresh_token": access_token}
-    )
+    response = await client.post(f"{_PREFIX}/refresh", json={"refresh_token": access_token})
     assert response.status_code == 401
 
 
 async def test_refresh_rejects_garbage(client: AsyncClient) -> None:
-    response = await client.post(
-        f"{_PREFIX}/refresh", json={"refresh_token": "not-a-jwt"}
-    )
+    response = await client.post(f"{_PREFIX}/refresh", json={"refresh_token": "not-a-jwt"})
     assert response.status_code == 401
 
 
@@ -123,16 +115,12 @@ async def test_refresh_rotates_and_invalidates_old_token(
     tokens = await _login_tokens(client, "rotate@example.com")
     old_refresh = tokens["refresh_token"]
 
-    first = await client.post(
-        f"{_PREFIX}/refresh", json={"refresh_token": old_refresh}
-    )
+    first = await client.post(f"{_PREFIX}/refresh", json={"refresh_token": old_refresh})
     assert first.status_code == 200
     assert first.json()["refresh_token"] != old_refresh
 
     # The rotated (old) token must no longer be accepted.
-    reuse = await client.post(
-        f"{_PREFIX}/refresh", json={"refresh_token": old_refresh}
-    )
+    reuse = await client.post(f"{_PREFIX}/refresh", json={"refresh_token": old_refresh})
     assert reuse.status_code == 401
 
 
@@ -140,21 +128,15 @@ async def test_logout_revokes_refresh_token(client: AsyncClient) -> None:
     tokens = await _login_tokens(client, "logout@example.com")
     refresh_token = tokens["refresh_token"]
 
-    logout = await client.post(
-        f"{_PREFIX}/logout", json={"refresh_token": refresh_token}
-    )
+    logout = await client.post(f"{_PREFIX}/logout", json={"refresh_token": refresh_token})
     assert logout.status_code == 204
 
-    after = await client.post(
-        f"{_PREFIX}/refresh", json={"refresh_token": refresh_token}
-    )
+    after = await client.post(f"{_PREFIX}/refresh", json={"refresh_token": refresh_token})
     assert after.status_code == 401
 
 
 async def test_logout_rejects_unknown_token(client: AsyncClient) -> None:
-    response = await client.post(
-        f"{_PREFIX}/logout", json={"refresh_token": "not-a-jwt"}
-    )
+    response = await client.post(f"{_PREFIX}/logout", json={"refresh_token": "not-a-jwt"})
     assert response.status_code == 401
 
 

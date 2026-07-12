@@ -18,9 +18,7 @@ from app.schemas.conversation import (
 from app.services import chat_service, conversation_service
 from app.services.exceptions import NotFoundError
 
-router = APIRouter(
-    prefix="/workspaces/{workspace_id}/conversations", tags=["conversations"]
-)
+router = APIRouter(prefix="/workspaces/{workspace_id}/conversations", tags=["conversations"])
 
 _NOT_FOUND = "Conversation not found"
 
@@ -38,9 +36,7 @@ async def create_conversation(
             db, workspace_id, current_user.id, payload.title
         )
     except NotFoundError as exc:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, "Workspace not found"
-        ) from exc
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Workspace not found") from exc
     return ConversationRead.model_validate(conversation)
 
 
@@ -50,13 +46,9 @@ async def list_conversations(
 ) -> list[ConversationRead]:
     """List the caller's conversations in a workspace."""
     try:
-        items = await conversation_service.list_for_user(
-            db, workspace_id, current_user.id
-        )
+        items = await conversation_service.list_for_user(db, workspace_id, current_user.id)
     except NotFoundError as exc:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, "Workspace not found"
-        ) from exc
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Workspace not found") from exc
     return [ConversationRead.model_validate(c) for c in items]
 
 
@@ -86,9 +78,7 @@ async def list_messages(
 ) -> list[MessageRead]:
     """Return the message history of a conversation."""
     try:
-        await conversation_service.get_for_user(
-            db, workspace_id, conversation_id, current_user.id
-        )
+        await conversation_service.get_for_user(db, workspace_id, conversation_id, current_user.id)
     except NotFoundError as exc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, _NOT_FOUND) from exc
     messages = await conversation_service.list_messages(db, conversation_id)

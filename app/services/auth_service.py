@@ -53,9 +53,7 @@ def _decode_refresh(refresh_token: str) -> tuple[uuid.UUID, uuid.UUID]:
         raise InvalidCredentials("malformed refresh token") from exc
 
 
-async def register(
-    db: AsyncSession, email: str, password: str, full_name: str | None
-) -> User:
+async def register(db: AsyncSession, email: str, password: str, full_name: str | None) -> User:
     """Create a new user account."""
     return await user_service.create_user(db, email, password, full_name)
 

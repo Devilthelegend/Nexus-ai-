@@ -56,16 +56,12 @@ async def run_agent(
     settings = settings or get_settings()
     started = time.perf_counter()
     conversation_id = conversation.id
-    context = ToolContext(
-        db, conversation.workspace_id, embedder, store, settings
-    )
+    context = ToolContext(db, conversation.workspace_id, embedder, store, settings)
 
     memory_block = ""
     memory_vector: list[float] | None = None
     if settings.agent_memory_enabled:
-        short_term = await memory.recent_turns(
-            db, conversation_id, settings.agent_short_term_turns
-        )
+        short_term = await memory.recent_turns(db, conversation_id, settings.agent_short_term_turns)
         (memory_vector,) = await embedder.embed([objective])
         long_term = memory.get_agent_memory().recall(
             conversation.workspace_id,
@@ -118,9 +114,7 @@ async def run_agent(
                 }
             )
 
-        system = _SYSTEM_TEMPLATE.format(
-            memory=memory_block, context=context_text or "(none)"
-        )
+        system = _SYSTEM_TEMPLATE.format(memory=memory_block, context=context_text or "(none)")
         completion = await llm.complete(
             [LLMMessage("system", system), LLMMessage("user", objective)]
         )
@@ -168,9 +162,7 @@ async def run_agent(
         objective=objective,
         steps=steps,
         tool_calls=tool_calls,
-        cost_usd=round(
-            total_tokens / 1000 * settings.llm_cost_per_1k_tokens, 6
-        ),
+        cost_usd=round(total_tokens / 1000 * settings.llm_cost_per_1k_tokens, 6),
         latency_ms=int((time.perf_counter() - started) * 1000),
         answer_message_id=answer_message_id,
         error=error,
@@ -181,9 +173,7 @@ async def run_agent(
     return run
 
 
-async def list_runs(
-    db: AsyncSession, conversation_id: uuid.UUID
-) -> list[AgentRun]:
+async def list_runs(db: AsyncSession, conversation_id: uuid.UUID) -> list[AgentRun]:
     """Return a conversation's agent runs, newest first."""
     result = await db.execute(
         select(AgentRun)

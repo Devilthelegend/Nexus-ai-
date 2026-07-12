@@ -51,9 +51,7 @@ async def test_complete_parses_text_and_usage(monkeypatch) -> None:
         )
 
     _install_transport(monkeypatch, handler)
-    provider = OpenAILLMProvider(
-        model="gpt-test", api_key="secret-key", max_tokens=256
-    )
+    provider = OpenAILLMProvider(model="gpt-test", api_key="secret-key", max_tokens=256)
     result = await provider.complete(_MESSAGES)
 
     assert result.text == "Aurora is the capital [1]"
@@ -105,6 +103,4 @@ def test_parse_sse_delta_ignores_noise() -> None:
     assert _parse_sse_delta("data: [DONE]") is None
     assert _parse_sse_delta("data: {not json}") is None
     assert _parse_sse_delta('data: {"choices":[]}') is None
-    assert (
-        _parse_sse_delta('data: {"choices":[{"delta":{"content":"hi"}}]}') == "hi"
-    )
+    assert _parse_sse_delta('data: {"choices":[{"delta":{"content":"hi"}}]}') == "hi"

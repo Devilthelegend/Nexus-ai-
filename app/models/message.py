@@ -36,10 +36,6 @@ class Message(Base, UUIDMixin, TimestampMixin):
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
     tokens: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    citations: Mapped[list[dict[str, Any]] | None] = mapped_column(
-        JSON, nullable=True
-    )
+    citations: Mapped[list[dict[str, Any]] | None] = mapped_column(JSON, nullable=True)
 
-    conversation: Mapped[Conversation] = relationship(
-        back_populates="messages"
-    )
+    conversation: Mapped[Conversation] = relationship(back_populates="messages")

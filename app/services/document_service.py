@@ -28,9 +28,7 @@ def compute_checksum(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def _storage_path(
-    settings: Settings, workspace_id: uuid.UUID, document_id: uuid.UUID
-) -> Path:
+def _storage_path(settings: Settings, workspace_id: uuid.UUID, document_id: uuid.UUID) -> Path:
     base = Path(settings.upload_dir) / str(workspace_id)
     base.mkdir(parents=True, exist_ok=True)
     return base / str(document_id)
@@ -105,11 +103,7 @@ async def get_for_user(
     """Return a document only if the caller is a member of its workspace."""
     await _require_membership(db, workspace_id, user_id)
     document = await db.get(Document, document_id)
-    if (
-        document is None
-        or document.deleted_at is not None
-        or document.workspace_id != workspace_id
-    ):
+    if document is None or document.deleted_at is not None or document.workspace_id != workspace_id:
         raise NotFoundError("document")
     return document
 

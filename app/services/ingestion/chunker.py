@@ -29,9 +29,7 @@ def _latest_section(text: str) -> str | None:
     return matches[-1].strip() if matches else None
 
 
-def chunk_pages(
-    pages: list[ExtractedPage], size: int, overlap: int
-) -> list[TextChunk]:
+def chunk_pages(pages: list[ExtractedPage], size: int, overlap: int) -> list[TextChunk]:
     """Produce overlapping character windows per page, preserving metadata.
 
     ``size`` and ``overlap`` are character counts; ``overlap`` is clamped to be

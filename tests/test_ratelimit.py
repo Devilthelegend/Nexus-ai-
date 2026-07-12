@@ -27,35 +27,24 @@ def reset_rate_limit_settings():
 
 
 async def _token(client: AsyncClient, email: str) -> str:
-    await client.post(
-        f"{_AUTH}/register", json={"email": email, "password": _PASSWORD}
-    )
-    login = await client.post(
-        f"{_AUTH}/login", json={"email": email, "password": _PASSWORD}
-    )
+    await client.post(f"{_AUTH}/register", json={"email": email, "password": _PASSWORD})
+    login = await client.post(f"{_AUTH}/login", json={"email": email, "password": _PASSWORD})
     return login.json()["access_token"]
 
 
-async def test_requests_over_limit_are_throttled(
-    client: AsyncClient, monkeypatch
-) -> None:
+async def test_requests_over_limit_are_throttled(client: AsyncClient, monkeypatch) -> None:
     token = await _token(client, "rl-user@example.com")
     headers = {"Authorization": f"Bearer {token}"}
 
     settings = get_settings()
     monkeypatch.setattr(settings, "rate_limit_requests", 3)
 
-    statuses = [
-        (await client.get(f"{_AUTH}/me", headers=headers)).status_code
-        for _ in range(4)
-    ]
+    statuses = [(await client.get(f"{_AUTH}/me", headers=headers)).status_code for _ in range(4)]
     assert statuses[:3] == [200, 200, 200]
     assert statuses[3] == 429
 
 
-async def test_throttled_response_sets_retry_after(
-    client: AsyncClient, monkeypatch
-) -> None:
+async def test_throttled_response_sets_retry_after(client: AsyncClient, monkeypatch) -> None:
     token = await _token(client, "rl-retry@example.com")
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -68,21 +57,15 @@ async def test_throttled_response_sets_retry_after(
     assert int(blocked.headers["Retry-After"]) >= 1
 
 
-async def test_health_endpoints_are_exempt(
-    client: AsyncClient, monkeypatch
-) -> None:
+async def test_health_endpoints_are_exempt(client: AsyncClient, monkeypatch) -> None:
     settings = get_settings()
     monkeypatch.setattr(settings, "rate_limit_requests", 1)
 
-    statuses = [
-        (await client.get("/healthz")).status_code for _ in range(5)
-    ]
+    statuses = [(await client.get("/healthz")).status_code for _ in range(5)]
     assert statuses == [200, 200, 200, 200, 200]
 
 
-async def test_disabled_limiter_allows_all(
-    client: AsyncClient, monkeypatch
-) -> None:
+async def test_disabled_limiter_allows_all(client: AsyncClient, monkeypatch) -> None:
     token = await _token(client, "rl-off@example.com")
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -90,8 +73,5 @@ async def test_disabled_limiter_allows_all(
     monkeypatch.setattr(settings, "rate_limit_enabled", False)
     monkeypatch.setattr(settings, "rate_limit_requests", 1)
 
-    statuses = [
-        (await client.get(f"{_AUTH}/me", headers=headers)).status_code
-        for _ in range(4)
-    ]
+    statuses = [(await client.get(f"{_AUTH}/me", headers=headers)).status_code for _ in range(4)]
     assert statuses == [200, 200, 200, 200]

@@ -14,9 +14,7 @@ class Base(DeclarativeBase):
 class UUIDMixin:
     """Primary key as a UUID generated application-side."""
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
 
 
 class TimestampMixin:

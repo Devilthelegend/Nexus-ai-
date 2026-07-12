@@ -64,12 +64,8 @@ def test_store_evicts_oldest_when_full() -> None:
 
 
 async def _workspace(client: AsyncClient, email: str) -> dict[str, object]:
-    await client.post(
-        f"{_AUTH}/register", json={"email": email, "password": _PASSWORD}
-    )
-    login = await client.post(
-        f"{_AUTH}/login", json={"email": email, "password": _PASSWORD}
-    )
+    await client.post(f"{_AUTH}/register", json={"email": email, "password": _PASSWORD})
+    login = await client.post(f"{_AUTH}/login", json={"email": email, "password": _PASSWORD})
     headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
     ws = await client.post(_WS, json={"name": "KB"}, headers=headers)
     return {"workspace_id": ws.json()["id"], "headers": headers}
@@ -97,9 +93,7 @@ async def _start(client, ws) -> str:
 async def test_chat_populates_cache(client: AsyncClient) -> None:
     ws = await _workspace(client, "cache-fill@example.com")
     files = {"file": ("kb.txt", b"Nexus was founded in 2021.", "text/plain")}
-    await client.post(
-        f"{_WS}/{ws['workspace_id']}/documents", files=files, headers=ws["headers"]
-    )
+    await client.post(f"{_WS}/{ws['workspace_id']}/documents", files=files, headers=ws["headers"])
     conv_id = await _start(client, ws)
 
     await _chat(client, ws, conv_id, "When was Nexus founded?")
@@ -116,9 +110,7 @@ async def test_cache_hit_short_circuits_llm(client: AsyncClient) -> None:
     question = "What is the secret handshake?"
     wid = uuid.UUID(ws["workspace_id"])
     (vec,) = await get_embedding_provider().embed([question])
-    get_semantic_cache().store(
-        wid, vec, CachedAnswer("SEEDED cached answer [1]", [])
-    )
+    get_semantic_cache().store(wid, vec, CachedAnswer("SEEDED cached answer [1]", []))
 
     answer = await _chat(client, ws, conv_id, question)
     assert answer["content"] == "SEEDED cached answer [1]"

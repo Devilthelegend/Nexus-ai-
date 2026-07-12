@@ -26,9 +26,7 @@ async def create_conversation(
 ) -> Conversation:
     """Start a conversation owned by the caller within a workspace."""
     await _require_membership(db, workspace_id, user_id)
-    conversation = Conversation(
-        workspace_id=workspace_id, user_id=user_id, title=title
-    )
+    conversation = Conversation(workspace_id=workspace_id, user_id=user_id, title=title)
     db.add(conversation)
     await db.commit()
     await db.refresh(conversation)
@@ -69,9 +67,7 @@ async def get_for_user(
     return conversation
 
 
-async def list_messages(
-    db: AsyncSession, conversation_id: uuid.UUID
-) -> list[Message]:
+async def list_messages(db: AsyncSession, conversation_id: uuid.UUID) -> list[Message]:
     """Return every message in a conversation, oldest first."""
     result = await db.execute(
         select(Message)

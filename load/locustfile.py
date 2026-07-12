@@ -61,8 +61,7 @@ class NexusUser(HttpUser):
     def chat(self) -> None:
         """The hot path: submit a grounded chat turn."""
         self.client.post(
-            f"{_API}/workspaces/{self.workspace_id}"
-            f"/conversations/{self.conversation_id}/messages",
+            f"{_API}/workspaces/{self.workspace_id}/conversations/{self.conversation_id}/messages",
             json={"message": "What does the knowledge base say about this?"},
             headers=self.headers,
             name="POST /messages (chat)",
@@ -72,8 +71,7 @@ class NexusUser(HttpUser):
     def list_messages(self) -> None:
         """A lighter read to mix in with writes."""
         self.client.get(
-            f"{_API}/workspaces/{self.workspace_id}"
-            f"/conversations/{self.conversation_id}/messages",
+            f"{_API}/workspaces/{self.workspace_id}/conversations/{self.conversation_id}/messages",
             headers=self.headers,
             name="GET /messages",
         )

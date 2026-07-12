@@ -43,12 +43,8 @@ def test_reciprocal_rank_uses_first_relevant() -> None:
 
 
 async def _workspace(client: AsyncClient, email: str) -> dict[str, object]:
-    await client.post(
-        f"{_AUTH}/register", json={"email": email, "password": _PASSWORD}
-    )
-    login = await client.post(
-        f"{_AUTH}/login", json={"email": email, "password": _PASSWORD}
-    )
+    await client.post(f"{_AUTH}/register", json={"email": email, "password": _PASSWORD})
+    login = await client.post(f"{_AUTH}/login", json={"email": email, "password": _PASSWORD})
     headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
     ws = await client.post(_WS, json={"name": "KB"}, headers=headers)
     return {"workspace_id": ws.json()["id"], "headers": headers}

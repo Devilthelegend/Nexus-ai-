@@ -11,7 +11,8 @@ stack is fully offline by default while remaining production-ready.
 import logging
 from time import perf_counter
 
-from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi import FastAPI
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 
@@ -26,7 +27,7 @@ _logger = logging.getLogger("nexus.observability")
 class RequestContextMiddleware(BaseHTTPMiddleware):
     """Assign/propagate a correlation id and expose it on the response."""
 
-    async def dispatch(self, request: Request, call_next) -> Response:  # noqa: ANN001
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         request_id = request.headers.get(_REQUEST_ID_HEADER) or new_request_id()
         token = set_request_id(request_id)
         try:
@@ -40,7 +41,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 class MetricsMiddleware(BaseHTTPMiddleware):
     """Record request throughput, latency, concurrency and error metrics."""
 
-    async def dispatch(self, request: Request, call_next) -> Response:  # noqa: ANN001
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         metrics = get_metrics()
         metrics.http_in_flight.inc()
         started = perf_counter()
@@ -67,7 +68,7 @@ def record_llm_usage(tokens: int, cost_usd: float) -> None:
         _logger.debug("failed to record llm usage", exc_info=True)
 
 
-def init_tracing(app, settings: Settings) -> None:  # noqa: ANN001 - FastAPI app
+def init_tracing(app: FastAPI, settings: Settings) -> None:
     """Instrument the app with OpenTelemetry if enabled and installed."""
     if not settings.otel_enabled:
         return
@@ -87,9 +88,7 @@ def init_error_tracking(settings: Settings) -> None:
     try:
         import sentry_sdk
 
-        sentry_sdk.init(
-            dsn=settings.sentry_dsn, environment=settings.environment
-        )
+        sentry_sdk.init(dsn=settings.sentry_dsn, environment=settings.environment)
         _logger.info("Sentry error tracking enabled")
     except Exception:  # noqa: BLE001 - error tracking is optional
         _logger.warning("sentry_dsn set but sentry_sdk unavailable")

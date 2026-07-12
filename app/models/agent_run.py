@@ -33,18 +33,10 @@ class AgentRun(Base, UUIDMixin, TimestampMixin):
         SAEnum(AgentRunStatus, name="agent_run_status"), nullable=False
     )
     objective: Mapped[str] = mapped_column(Text, nullable=False)
-    steps: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSON, default=list, nullable=False
-    )
-    tool_calls: Mapped[list[dict[str, Any]]] = mapped_column(
-        JSON, default=list, nullable=False
-    )
-    cost_usd: Mapped[float] = mapped_column(
-        Float, default=0.0, nullable=False
-    )
-    latency_ms: Mapped[int] = mapped_column(
-        Integer, default=0, nullable=False
-    )
+    steps: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
+    tool_calls: Mapped[list[dict[str, Any]]] = mapped_column(JSON, default=list, nullable=False)
+    cost_usd: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    latency_ms: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     answer_message_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid,
         ForeignKey("messages.id", ondelete="SET NULL"),

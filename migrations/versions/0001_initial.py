@@ -15,9 +15,7 @@ down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-_role_enum = sa.Enum(
-    "owner", "admin", "member", "viewer", name="membership_role"
-)
+_role_enum = sa.Enum("owner", "admin", "member", "viewer", name="membership_role")
 
 
 def upgrade() -> None:
@@ -28,10 +26,18 @@ def upgrade() -> None:
         sa.Column("hashed_password", sa.String(length=255), nullable=False),
         sa.Column("full_name", sa.String(length=255), nullable=True),
         sa.Column("is_active", sa.Boolean(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True),
-                  server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True),
-                  server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
     )
     op.create_index("ix_users_email", "users", ["email"], unique=True)
@@ -42,13 +48,20 @@ def upgrade() -> None:
         sa.Column("name", sa.String(length=255), nullable=False),
         sa.Column("owner_id", sa.Uuid(), nullable=False),
         sa.Column("plan", sa.String(length=50), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True),
-                  server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True),
-                  server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
-        sa.ForeignKeyConstraint(["owner_id"], ["users.id"],
-                                ondelete="RESTRICT"),
+        sa.ForeignKeyConstraint(["owner_id"], ["users.id"], ondelete="RESTRICT"),
     )
 
     op.create_table(
@@ -57,15 +70,21 @@ def upgrade() -> None:
         sa.Column("user_id", sa.Uuid(), nullable=False),
         sa.Column("workspace_id", sa.Uuid(), nullable=False),
         sa.Column("role", _role_enum, nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True),
-                  server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True),
-                  server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["workspace_id"], ["workspaces.id"],
-                                ondelete="CASCADE"),
-        sa.UniqueConstraint("user_id", "workspace_id",
-                            name="uq_user_workspace"),
+        sa.ForeignKeyConstraint(["workspace_id"], ["workspaces.id"], ondelete="CASCADE"),
+        sa.UniqueConstraint("user_id", "workspace_id", name="uq_user_workspace"),
     )
 
 

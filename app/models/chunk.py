@@ -19,9 +19,7 @@ class Chunk(Base, UUIDMixin, TimestampMixin):
     """An ordered slice of a document's text prepared for embedding."""
 
     __tablename__ = "chunks"
-    __table_args__ = (
-        UniqueConstraint("document_id", "ordinal", name="uq_document_ordinal"),
-    )
+    __table_args__ = (UniqueConstraint("document_id", "ordinal", name="uq_document_ordinal"),)
 
     document_id: Mapped[uuid.UUID] = mapped_column(
         Uuid,

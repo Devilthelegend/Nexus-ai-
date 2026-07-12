@@ -24,19 +24,22 @@ def upgrade() -> None:
         sa.Column("jti", sa.Uuid(), nullable=False),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("revoked_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True),
-                  server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True),
-                  server_default=sa.text("now()"), nullable=False),
-        sa.ForeignKeyConstraint(["user_id"], ["users.id"],
-                                ondelete="CASCADE"),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
     )
-    op.create_index(
-        "ix_refresh_tokens_user_id", "refresh_tokens", ["user_id"]
-    )
-    op.create_index(
-        "ix_refresh_tokens_jti", "refresh_tokens", ["jti"], unique=True
-    )
+    op.create_index("ix_refresh_tokens_user_id", "refresh_tokens", ["user_id"])
+    op.create_index("ix_refresh_tokens_jti", "refresh_tokens", ["jti"], unique=True)
 
 
 def downgrade() -> None:

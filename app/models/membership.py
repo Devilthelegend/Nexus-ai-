@@ -18,9 +18,7 @@ class Membership(Base, UUIDMixin, TimestampMixin):
     """Association between a user and a workspace with an assigned role."""
 
     __tablename__ = "memberships"
-    __table_args__ = (
-        UniqueConstraint("user_id", "workspace_id", name="uq_user_workspace"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "workspace_id", name="uq_user_workspace"),)
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False

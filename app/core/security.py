@@ -1,6 +1,6 @@
 """Password hashing (argon2) and JWT token creation/verification."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 
 import jwt
@@ -34,7 +34,7 @@ def _create_token(
     expires: timedelta,
     jti: str | None = None,
 ) -> str:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     payload: dict[str, Any] = {
         "sub": subject,
         "type": token_type,
@@ -43,16 +43,12 @@ def _create_token(
     }
     if jti is not None:
         payload["jti"] = jti
-    return jwt.encode(
-        payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
-    )
+    return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
 
 def create_access_token(subject: str) -> str:
     """Create a short-lived access token for the given subject (user id)."""
-    return _create_token(
-        subject, "access", timedelta(minutes=settings.access_token_expire_minutes)
-    )
+    return _create_token(subject, "access", timedelta(minutes=settings.access_token_expire_minutes))
 
 
 def create_refresh_token(subject: str, jti: str) -> str:
@@ -67,6 +63,4 @@ def create_refresh_token(subject: str, jti: str) -> str:
 
 def decode_token(token: str) -> dict[str, Any]:
     """Decode and validate a JWT, raising ``jwt.PyJWTError`` on failure."""
-    return jwt.decode(
-        token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
-    )
+    return jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])

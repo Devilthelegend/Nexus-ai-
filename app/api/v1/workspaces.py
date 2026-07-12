@@ -17,23 +17,17 @@ from app.services.exceptions import NotFoundError, PermissionDenied
 router = APIRouter(prefix="/workspaces", tags=["workspaces"])
 
 
-@router.post(
-    "", response_model=WorkspaceRead, status_code=status.HTTP_201_CREATED
-)
+@router.post("", response_model=WorkspaceRead, status_code=status.HTTP_201_CREATED)
 async def create_workspace(
     payload: WorkspaceCreate, db: DbSession, current_user: CurrentUser
 ) -> WorkspaceRead:
     """Create a workspace owned by the current user."""
-    workspace = await workspace_service.create_workspace(
-        db, payload.name, current_user
-    )
+    workspace = await workspace_service.create_workspace(db, payload.name, current_user)
     return WorkspaceRead.model_validate(workspace)
 
 
 @router.get("", response_model=list[WorkspaceRead])
-async def list_workspaces(
-    db: DbSession, current_user: CurrentUser
-) -> list[WorkspaceRead]:
+async def list_workspaces(db: DbSession, current_user: CurrentUser) -> list[WorkspaceRead]:
     """List workspaces the current user belongs to."""
     items = await workspace_service.list_for_user(db, current_user.id)
     return [WorkspaceRead.model_validate(w) for w in items]
@@ -45,13 +39,9 @@ async def get_workspace(
 ) -> WorkspaceRead:
     """Retrieve a workspace the current user is a member of."""
     try:
-        workspace = await workspace_service.get_for_user(
-            db, workspace_id, current_user.id
-        )
+        workspace = await workspace_service.get_for_user(db, workspace_id, current_user.id)
     except NotFoundError as exc:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, "Workspace not found"
-        ) from exc
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Workspace not found") from exc
     return WorkspaceRead.model_validate(workspace)
 
 
@@ -72,11 +62,7 @@ async def add_member(
             db, workspace_id, current_user.id, payload.user_id, payload.role
         )
     except NotFoundError as exc:
-        raise HTTPException(
-            status.HTTP_404_NOT_FOUND, "Workspace not found"
-        ) from exc
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Workspace not found") from exc
     except PermissionDenied as exc:
-        raise HTTPException(
-            status.HTTP_403_FORBIDDEN, "Insufficient permissions"
-        ) from exc
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Insufficient permissions") from exc
     return MembershipRead.model_validate(membership)

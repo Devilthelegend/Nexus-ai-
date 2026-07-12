@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.types import Lifespan
 
 from app.api import metrics
 from app.api.v1 import health
@@ -24,7 +25,7 @@ from app.core.ratelimit import RateLimitMiddleware
 from app.core.security_headers import SecurityHeadersMiddleware
 
 
-def _build_lifespan(settings: Settings):
+def _build_lifespan(settings: Settings) -> Lifespan[FastAPI]:
     """Build a lifespan that optionally creates tables on startup.
 
     When ``db_auto_create`` is set (intended for local/offline runs such as

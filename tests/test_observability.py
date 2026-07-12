@@ -59,9 +59,7 @@ async def test_request_id_is_echoed(client: AsyncClient) -> None:
 
 
 async def test_request_id_is_propagated(client: AsyncClient) -> None:
-    resp = await client.get(
-        "/healthz", headers={"X-Request-ID": "trace-42"}
-    )
+    resp = await client.get("/healthz", headers={"X-Request-ID": "trace-42"})
     assert resp.headers.get("X-Request-ID") == "trace-42"
 
 

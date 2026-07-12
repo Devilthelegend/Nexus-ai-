@@ -27,18 +27,13 @@ class QdrantVectorStore:
         if not await self._client.collection_exists(self._collection):
             await self._client.create_collection(
                 collection_name=self._collection,
-                vectors_config=VectorParams(
-                    size=dimension, distance=Distance.COSINE
-                ),
+                vectors_config=VectorParams(size=dimension, distance=Distance.COSINE),
             )
 
     async def upsert(self, records: Sequence[VectorRecord]) -> None:
         from qdrant_client.models import PointStruct
 
-        points = [
-            PointStruct(id=r.id, vector=r.vector, payload=r.payload)
-            for r in records
-        ]
+        points = [PointStruct(id=r.id, vector=r.vector, payload=r.payload) for r in records]
         await self._client.upsert(self._collection, points=points)
 
     def _workspace_filter(self, workspace_id: uuid.UUID) -> Any:
@@ -80,9 +75,7 @@ class QdrantVectorStore:
             for point in response.points
         ]
 
-    async def delete_by_document(
-        self, workspace_id: uuid.UUID, document_id: uuid.UUID
-    ) -> None:
+    async def delete_by_document(self, workspace_id: uuid.UUID, document_id: uuid.UUID) -> None:
         from qdrant_client.models import (
             FieldCondition,
             Filter,

@@ -66,12 +66,8 @@ def test_format_memory_block_empty_and_populated() -> None:
 
 
 async def _workspace(client: AsyncClient, email: str) -> dict[str, object]:
-    await client.post(
-        f"{_AUTH}/register", json={"email": email, "password": _PASSWORD}
-    )
-    login = await client.post(
-        f"{_AUTH}/login", json={"email": email, "password": _PASSWORD}
-    )
+    await client.post(f"{_AUTH}/register", json={"email": email, "password": _PASSWORD})
+    login = await client.post(f"{_AUTH}/login", json={"email": email, "password": _PASSWORD})
     headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
     ws = await client.post(_WS, json={"name": "KB"}, headers=headers)
     return {"workspace_id": ws.json()["id"], "headers": headers}
@@ -80,9 +76,7 @@ async def _workspace(client: AsyncClient, email: str) -> dict[str, object]:
 async def test_agent_run_remembers_summary(client: AsyncClient) -> None:
     ws = await _workspace(client, "mem-owner@example.com")
     files = {"file": ("kb.txt", b"The capital of Nexus is Aurora.", "text/plain")}
-    await client.post(
-        f"{_WS}/{ws['workspace_id']}/documents", files=files, headers=ws["headers"]
-    )
+    await client.post(f"{_WS}/{ws['workspace_id']}/documents", files=files, headers=ws["headers"])
     created = await client.post(
         f"{_WS}/{ws['workspace_id']}/conversations",
         json={"title": "Agent"},

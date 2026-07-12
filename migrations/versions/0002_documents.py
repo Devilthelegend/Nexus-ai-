@@ -15,9 +15,7 @@ down_revision: str | None = "0001_initial"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
-_status_enum = sa.Enum(
-    "queued", "processing", "indexed", "failed", name="document_status"
-)
+_status_enum = sa.Enum("queued", "processing", "indexed", "failed", name="document_status")
 
 
 def upgrade() -> None:
@@ -32,15 +30,21 @@ def upgrade() -> None:
         sa.Column("status", _status_enum, nullable=False),
         sa.Column("error", sa.Text(), nullable=True),
         sa.Column("chunk_count", sa.Integer(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True),
-                  server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True),
-                  server_default=sa.text("now()"), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
         sa.Column("deleted_at", sa.DateTime(timezone=True), nullable=True),
-        sa.ForeignKeyConstraint(["workspace_id"], ["workspaces.id"],
-                                ondelete="CASCADE"),
-        sa.UniqueConstraint("workspace_id", "checksum",
-                            name="uq_workspace_checksum"),
+        sa.ForeignKeyConstraint(["workspace_id"], ["workspaces.id"], ondelete="CASCADE"),
+        sa.UniqueConstraint("workspace_id", "checksum", name="uq_workspace_checksum"),
     )
     op.create_index("ix_documents_workspace_id", "documents", ["workspace_id"])
     op.create_index("ix_documents_status", "documents", ["status"])
@@ -54,14 +58,20 @@ def upgrade() -> None:
         sa.Column("token_count", sa.Integer(), nullable=False),
         sa.Column("page", sa.Integer(), nullable=True),
         sa.Column("section", sa.String(length=255), nullable=True),
-        sa.Column("created_at", sa.DateTime(timezone=True),
-                  server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True),
-                  server_default=sa.text("now()"), nullable=False),
-        sa.ForeignKeyConstraint(["document_id"], ["documents.id"],
-                                ondelete="CASCADE"),
-        sa.UniqueConstraint("document_id", "ordinal",
-                            name="uq_document_ordinal"),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(["document_id"], ["documents.id"], ondelete="CASCADE"),
+        sa.UniqueConstraint("document_id", "ordinal", name="uq_document_ordinal"),
     )
     op.create_index("ix_chunks_document_id", "chunks", ["document_id"])
 
@@ -72,12 +82,19 @@ def upgrade() -> None:
         sa.Column("vector_id", sa.String(length=64), nullable=False),
         sa.Column("model", sa.String(length=128), nullable=False),
         sa.Column("dimension", sa.Integer(), nullable=False),
-        sa.Column("created_at", sa.DateTime(timezone=True),
-                  server_default=sa.text("now()"), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True),
-                  server_default=sa.text("now()"), nullable=False),
-        sa.ForeignKeyConstraint(["chunk_id"], ["chunks.id"],
-                                ondelete="CASCADE"),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.ForeignKeyConstraint(["chunk_id"], ["chunks.id"], ondelete="CASCADE"),
         sa.UniqueConstraint("chunk_id", name="uq_embedding_chunk"),
     )
 

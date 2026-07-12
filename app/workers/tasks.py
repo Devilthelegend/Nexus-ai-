@@ -26,9 +26,7 @@ async def _ingest_document(document_id: uuid.UUID) -> None:
         document = await db.get(Document, document_id)
         if document is None or document.deleted_at is not None:
             return
-        data = _storage_path(
-            settings, document.workspace_id, document_id
-        ).read_bytes()
+        data = _storage_path(settings, document.workspace_id, document_id).read_bytes()
         await run_ingestion(
             db,
             document,
@@ -45,6 +43,4 @@ def ingest_document(document_id: str) -> None:
 
 
 if celery_app is not None:  # pragma: no cover - requires Celery installed
-    ingest_document = celery_app.task(
-        name="app.workers.tasks.ingest_document"
-    )(ingest_document)
+    ingest_document = celery_app.task(name="app.workers.tasks.ingest_document")(ingest_document)

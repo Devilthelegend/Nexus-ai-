@@ -45,12 +45,27 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "C4", "SIM"]
 
+[tool.ruff.lint.per-file-ignores]
+# FastAPI dependency-injection idiom: File()/Depends() in argument defaults.
+"app/api/v1/documents.py" = ["B008"]
+
 [tool.mypy]
 python_version = "3.12"
 strict = true
 warn_unused_ignores = true
 disallow_untyped_defs = true
 plugins = ["pydantic.mypy"]
+
+# Optional/runtime-gated third-party packages ship no type stubs; they are
+# imported lazily behind feature flags, so treat their missing stubs as clean.
+[[tool.mypy.overrides]]
+module = [
+    "qdrant_client.*",
+    "celery.*",
+    "opentelemetry.*",
+    "sentry_sdk.*",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
