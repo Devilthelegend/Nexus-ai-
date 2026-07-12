@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-config
+  namespace: nexus
+  labels:
+    app.kubernetes.io/name: nexusai
+data:
+  # Non-secret settings; consumed as environment variables (case-insensitive).
+  ENVIRONMENT: "production"
+  DEBUG: "false"
+  API_V1_PREFIX: "/api/v1"
+  REDIS_URL: "redis://nexus-redis:6379/0"
+  QDRANT_URL: "http://nexus-qdrant:6333"
+  VECTOR_BACKEND: "qdrant"
+  QDRANT_COLLECTION: "nexus_chunks"
+  LLM_PROVIDER: "mock"
+  EMBEDDING_PROVIDER: "mock"
+  INGEST_EAGER: "false"
+  METRICS_ENABLED: "true"
+  SECURITY_HEADERS_ENABLED: "true"
+  OTEL_ENABLED: "false"
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_REQUESTS: "120"
+  RATE_LIMIT_WINDOW_SECONDS: "60"

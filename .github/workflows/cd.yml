@@ -1,0 +1,110 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+concurrency:
+  group: cd-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}/api
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=sha
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy-staging:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "${{ secrets.KUBECONFIG_STAGING }}" | base64 -d > "$HOME/.kube/config"
+
+      - name: Apply manifests
+        run: kubectl apply -f deploy/kubernetes/
+
+      - name: Roll out new image
+        run: |
+          kubectl -n nexus set image deployment/nexus-api \
+            api=${{ needs.build-and-push.outputs.image }}
+          kubectl -n nexus set image deployment/nexus-worker \
+            worker=${{ needs.build-and-push.outputs.image }}
+          kubectl -n nexus rollout status deployment/nexus-api --timeout=180s
+          kubectl -n nexus rollout status deployment/nexus-worker --timeout=180s
+
+      - name: Smoke test
+        run: |
+          kubectl -n nexus run smoke-$RANDOM --rm -i --restart=Never \
+            --image=curlimages/curl:8.9.1 -- \
+            -fsS http://nexus-api.nexus.svc.cluster.local/healthz
+
+  promote-production:
+    needs: [build-and-push, deploy-staging]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p "$HOME/.kube"
+          echo "${{ secrets.KUBECONFIG_PRODUCTION }}" | base64 -d > "$HOME/.kube/config"
+
+      - name: Apply manifests
+        run: kubectl apply -f deploy/kubernetes/
+
+      - name: Roll out new image
+        run: |
+          kubectl -n nexus set image deployment/nexus-api \
+            api=${{ needs.build-and-push.outputs.image }}
+          kubectl -n nexus set image deployment/nexus-worker \
+            worker=${{ needs.build-and-push.outputs.image }}
+          kubectl -n nexus rollout status deployment/nexus-api --timeout=300s
+          kubectl -n nexus rollout status deployment/nexus-worker --timeout=300s

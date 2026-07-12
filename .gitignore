@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environment / secrets
+.env
+*.local
+
+# Local database & uploaded files (runtime artifacts — never commit)
+*.db
+*.sqlite3
+/var/
+
+# Local scratch / scan output (repo root only)
+/_*.txt
+/_*.py
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# uv
+uv.lock

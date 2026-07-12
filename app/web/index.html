@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>NexusAI</title>
+<style>
+:root{--bg:#0f1115;--panel:#171a21;--panel2:#1f2430;--border:#2a3140;--text:#e6e9ef;--muted:#8b93a7;--accent:#4f8cff;--accent2:#3ad29f;--danger:#ff6b6b}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column}
+header{padding:12px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;background:var(--panel)}
+header .logo{font-weight:700;font-size:18px}
+.badge{font-size:12px;color:var(--muted)}
+.spacer{flex:1}
+button{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:9px 14px;font-size:14px;cursor:pointer}
+button.secondary{background:var(--panel2);border:1px solid var(--border);color:var(--text)}
+button:disabled{opacity:.5;cursor:not-allowed}
+input,select{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:9px 11px;font-size:14px;width:100%}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+.hidden{display:none!important}
+#auth{max-width:360px;margin:8vh auto;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:24px}
+#auth h2{margin:0 0 4px}
+.rowb{display:flex;gap:8px;margin-top:14px}
+.rowb button{flex:1}
+.msg{font-size:13px;margin-top:12px;min-height:18px}
+.msg.err{color:var(--danger)}
+.msg.ok{color:var(--accent2)}
+#app{flex:1;display:flex;min-height:0}
+#sidebar{width:300px;border-right:1px solid var(--border);background:var(--panel);padding:16px;overflow:auto}
+#sidebar h3{font-size:12px;text-transform:uppercase;color:var(--muted);margin:18px 0 8px}
+.docs{list-style:none;padding:0;margin:8px 0 0}
+.docs li{font-size:13px;padding:6px 8px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+.status{font-size:11px;padding:1px 7px;border-radius:20px;background:var(--panel2)}
+.status.indexed{color:var(--accent2)}
+.status.failed{color:var(--danger)}
+#main{flex:1;display:flex;flex-direction:column;min-width:0}
+#chat{flex:1;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:14px}
+.bubble{max-width:760px;padding:12px 14px;border-radius:12px;line-height:1.45}
+.bubble .body{white-space:pre-wrap}
+.bubble.user{align-self:flex-end;background:var(--accent);color:#fff}
+.bubble.assistant{align-self:flex-start;background:var(--panel2);border:1px solid var(--border)}
+.cites{margin-top:8px;font-size:12px;color:var(--muted)}
+.cites pre{white-space:pre-wrap;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;margin:6px 0 0}
+.composer{border-top:1px solid var(--border);padding:14px;display:flex;gap:10px;background:var(--panel)}
+.composer input{flex:1}
+.empty{color:var(--muted);text-align:center;margin:auto}
+</style>
+</head>
+<body>
+<header>
+  <span class="logo">NexusAI</span>
+  <span class="badge">Knowledge Intelligence</span>
+  <span class="spacer"></span>
+  <span id="who" class="badge"></span>
+  <button id="logoutBtn" class="secondary hidden">Logout</button>
+</header>
+
+<section id="auth">
+  <h2>Sign in</h2>
+  <div class="badge">Any email works — the backend runs on offline mock AI providers.</div>
+  <label>Email</label>
+  <input id="email" type="email" value="demo@nexusai.dev" />
+  <label>Password</label>
+  <input id="password" type="password" value="supersecret123" />
+  <div class="rowb">
+    <button id="loginBtn">Login</button>
+    <button id="registerBtn" class="secondary">Register</button>
+  </div>
+  <div id="authMsg" class="msg"></div>
+</section>
+
+<section id="app" class="hidden">
+  <aside id="sidebar">
+    <label>Workspace</label>
+    <select id="wsSelect"></select>
+    <div class="rowb" style="margin-top:8px">
+      <input id="wsName" placeholder="New workspace name" />
+      <button id="wsCreate" class="secondary">Add</button>
+    </div>
+    <h3>Documents</h3>
+    <input id="file" type="file" />
+    <button id="uploadBtn" class="secondary" style="margin-top:8px;width:100%">Upload &amp; index</button>
+    <ul id="docs" class="docs"></ul>
+    <div id="sideMsg" class="msg"></div>
+  </aside>
+  <main id="main">
+    <div id="chat"><div class="empty">Pick or create a workspace, then ask a question.</div></div>
+    <div class="composer">
+      <input id="q" placeholder="Ask about your documents…" />
+      <button id="sendBtn">Send</button>
+    </div>
+  </main>
+</section>
+
+<script>
+const API = "/api/v1";
+const state = { token: null, ws: null, conv: null };
+const $ = (id) => document.getElementById(id);
+const show = (el, on) => el.classList.toggle("hidden", !on);
+const setMsg = (el, text, kind) => { el.textContent = text || ""; el.className = "msg" + (kind ? " " + kind : ""); };
+
+async function api(path, { method = "GET", body, raw = false } = {}) {
+  const headers = {};
+  if (state.token) headers["Authorization"] = "Bearer " + state.token;
+  if (body && !(body instanceof FormData)) { headers["Content-Type"] = "application/json"; body = JSON.stringify(body); }
+  const res = await fetch(API + path, { method, headers, body });
+  if (raw) return res;
+  const data = res.status === 204 ? null : await res.json().catch(() => null);
+  if (!res.ok) throw new Error((data && data.message) || res.status + " " + res.statusText);
+  return data;
+}
+
+async function register() {
+  setMsg($("authMsg"), "Creating account…");
+  try {
+    await api("/auth/register", { method: "POST", body: { email: $("email").value, password: $("password").value } });
+    setMsg($("authMsg"), "Account created — signing in…", "ok");
+    await login();
+  } catch (e) { setMsg($("authMsg"), e.message, "err"); }
+}
+
+async function login() {
+  setMsg($("authMsg"), "Signing in…");
+  try {
+    const t = await api("/auth/login", { method: "POST", body: { email: $("email").value, password: $("password").value } });
+    state.token = t.access_token;
+    await onLoggedIn();
+  } catch (e) { setMsg($("authMsg"), e.message, "err"); }
+}
+
+function logout() {
+  state.token = null; state.ws = null; state.conv = null;
+  show($("app"), false); show($("auth"), true); show($("logoutBtn"), false);
+  $("who").textContent = ""; setMsg($("authMsg"), "");
+}
+async function onLoggedIn() {
+  const me = await api("/auth/me");
+  $("who").textContent = me.email;
+  show($("auth"), false); show($("app"), true); show($("logoutBtn"), true);
+  await loadWorkspaces();
+}
+
+async function loadWorkspaces() {
+  const items = await api("/workspaces");
+  const sel = $("wsSelect");
+  sel.innerHTML = "";
+  for (const w of items) {
+    const o = document.createElement("option");
+    o.value = w.id; o.textContent = w.name; sel.appendChild(o);
+  }
+  if (items.length) { sel.value = state.ws && items.some(w => w.id === state.ws) ? state.ws : items[0].id; await selectWorkspace(sel.value); }
+  else { state.ws = null; $("docs").innerHTML = ""; }
+}
+
+async function selectWorkspace(id) {
+  state.ws = id; state.conv = null;
+  $("chat").innerHTML = '<div class="empty">Ask a question about this workspace.</div>';
+  await loadDocs();
+}
+
+async function createWorkspace() {
+  const name = $("wsName").value.trim();
+  if (!name) return;
+  try {
+    const w = await api("/workspaces", { method: "POST", body: { name } });
+    $("wsName").value = ""; state.ws = w.id; await loadWorkspaces();
+    setMsg($("sideMsg"), "Workspace created.", "ok");
+  } catch (e) { setMsg($("sideMsg"), e.message, "err"); }
+}
+
+async function loadDocs() {
+  if (!state.ws) return;
+  const items = await api(`/workspaces/${state.ws}/documents`);
+  const ul = $("docs");
+  ul.innerHTML = "";
+  for (const d of items) {
+    const li = document.createElement("li");
+    const name = document.createElement("span");
+    name.textContent = d.filename;
+    const st = document.createElement("span");
+    st.className = "status " + d.status;
+    st.textContent = d.status;
+    li.appendChild(name); li.appendChild(st); ul.appendChild(li);
+  }
+}
+
+async function uploadDoc() {
+  if (!state.ws) { setMsg($("sideMsg"), "Select a workspace first.", "err"); return; }
+  const f = $("file").files[0];
+  if (!f) { setMsg($("sideMsg"), "Choose a file to upload.", "err"); return; }
+  setMsg($("sideMsg"), "Uploading & indexing…");
+  const fd = new FormData(); fd.append("file", f);
+  try {
+    const d = await api(`/workspaces/${state.ws}/documents`, { method: "POST", body: fd });
+    setMsg($("sideMsg"), `Indexed “${d.filename}” (${d.status}).`, "ok");
+    $("file").value = ""; await loadDocs();
+  } catch (e) { setMsg($("sideMsg"), e.message, "err"); }
+}
+
+async function ensureConversation() {
+  if (state.conv) return;
+  const c = await api(`/workspaces/${state.ws}/conversations`, { method: "POST", body: { title: "Chat" } });
+  state.conv = c.id;
+}
+
+function addBubble(role, text) {
+  const chat = $("chat");
+  const empty = chat.querySelector(".empty");
+  if (empty) empty.remove();
+  const b = document.createElement("div");
+  b.className = "bubble " + role;
+  const body = document.createElement("div");
+  body.className = "body"; body.textContent = text;
+  b.appendChild(body); chat.appendChild(b);
+  chat.scrollTop = chat.scrollHeight;
+  return b;
+}
+
+function renderCitations(bubble, citations) {
+  if (!citations || !citations.length) return;
+  const wrap = document.createElement("div");
+  wrap.className = "cites";
+  const det = document.createElement("details");
+  const sum = document.createElement("summary");
+  sum.textContent = `${citations.length} source${citations.length > 1 ? "s" : ""}`;
+  det.appendChild(sum);
+  citations.forEach((c, i) => {
+    const p = document.createElement("pre");
+    const loc = c.page != null ? ` · p.${c.page}` : "";
+    p.textContent = `[${i + 1}]${loc} (score ${Number(c.score).toFixed(3)})\n${c.text}`;
+    det.appendChild(p);
+  });
+  wrap.appendChild(det); bubble.appendChild(wrap);
+  $("chat").scrollTop = $("chat").scrollHeight;
+}
+
+function handleSSE(chunk, body, bubble) {
+  let data = "";
+  for (const line of chunk.split("\n")) {
+    if (line.startsWith("data:")) data += line.slice(5).trim();
+  }
+  if (!data) return;
+  let ev; try { ev = JSON.parse(data); } catch { return; }
+  if (ev.type === "token") { body.textContent += ev.text; $("chat").scrollTop = $("chat").scrollHeight; }
+  else if (ev.type === "done") { renderCitations(bubble, ev.citations); }
+}
+
+async function send() {
+  const q = $("q").value.trim();
+  if (!q) return;
+  if (!state.ws) { setMsg($("sideMsg"), "Select or create a workspace first.", "err"); return; }
+  $("sendBtn").disabled = true; $("q").value = "";
+  addBubble("user", q);
+  const bubble = addBubble("assistant", "");
+  const body = bubble.querySelector(".body");
+  try {
+    await ensureConversation();
+    const res = await api(`/workspaces/${state.ws}/conversations/${state.conv}/messages/stream`, { method: "POST", body: { message: q }, raw: true });
+    if (!res.ok || !res.body) throw new Error("stream failed (" + res.status + ")");
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf("\n\n")) >= 0) {
+        handleSSE(buf.slice(0, idx), body, bubble);
+        buf = buf.slice(idx + 2);
+      }
+    }
+  } catch (e) { body.textContent = "Error: " + e.message; }
+  finally { $("sendBtn").disabled = false; $("q").focus(); }
+}
+
+$("loginBtn").onclick = login;
+$("registerBtn").onclick = register;
+$("logoutBtn").onclick = logout;
+$("wsCreate").onclick = createWorkspace;
+$("uploadBtn").onclick = uploadDoc;
+$("sendBtn").onclick = send;
+$("wsSelect").onchange = (e) => selectWorkspace(e.target.value);
+$("q").addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
+$("password").addEventListener("keydown", (e) => { if (e.key === "Enter") login(); });
+</script>
+</body>
+</html>
