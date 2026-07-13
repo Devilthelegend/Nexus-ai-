@@ -1,8 +1,8 @@
 """Text extraction from uploaded files.
 
-Plain-text formats (txt/markdown/html) are handled with the standard library.
-PDF and DOCX use optional dependencies imported lazily, so the platform runs
-without them installed; an unsupported or missing-dependency upload fails
+Plain-text formats (txt/markdown/html/csv) are handled with the standard
+library. PDF and DOCX use optional dependencies imported lazily, so the platform
+runs without them installed; an unsupported or missing-dependency upload fails
 cleanly and lands in the DLQ rather than crashing the worker.
 """
 
@@ -83,12 +83,34 @@ def _extract_docx(data: bytes) -> list[ExtractedPage]:
     return [ExtractedPage(text=text)]
 
 
+def _extract_csv(data: bytes) -> list[ExtractedPage]:
+    import csv
+    import io
+
+    # ``utf-8-sig`` transparently strips a leading BOM written by Excel.
+    reader = csv.reader(io.StringIO(data.decode("utf-8-sig", errors="replace")))
+    rows = [row for row in reader if any(cell.strip() for cell in row)]
+    if not rows:
+        return [ExtractedPage(text="")]
+
+    header = rows[0]
+    lines = [" | ".join(header)]
+    for row in rows[1:]:
+        pairs = [
+            f"{header[i]}: {value}" if i < len(header) and header[i].strip() else value
+            for i, value in enumerate(row)
+        ]
+        lines.append(" | ".join(pairs))
+    return [ExtractedPage(text="\n".join(lines))]
+
+
 _EXTRACTORS = {
     "txt": _extract_text,
     "md": _extract_text,
     "markdown": _extract_text,
     "html": _extract_html,
     "htm": _extract_html,
+    "csv": _extract_csv,
     "pdf": _extract_pdf,
     "docx": _extract_docx,
 }

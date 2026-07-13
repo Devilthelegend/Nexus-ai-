@@ -10,13 +10,15 @@ from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
 from app.api.deps import CurrentUser, DbSession, Embedder, Vectors
 from app.core.config import get_settings
-from app.schemas.document import DocumentRead, DocumentStatusRead
+from app.schemas.document import DocumentFromUrlRequest, DocumentRead, DocumentStatusRead
 from app.services import document_service
 from app.services.exceptions import NotFoundError
+from app.services.ingestion.fetcher import UrlFetchError
 
 router = APIRouter(prefix="/workspaces/{workspace_id}/documents", tags=["documents"])
 
 _NOT_FOUND = "Document not found"
+_WORKSPACE_NOT_FOUND = "Workspace not found"
 
 
 @router.post("", response_model=DocumentRead, status_code=status.HTTP_201_CREATED)
@@ -49,7 +51,34 @@ async def upload_document(
             settings=settings,
         )
     except NotFoundError as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, _WORKSPACE_NOT_FOUND) from exc
+    return DocumentRead.model_validate(document)
+
+
+@router.post("/from-url", response_model=DocumentRead, status_code=status.HTTP_201_CREATED)
+async def ingest_from_url(
+    workspace_id: uuid.UUID,
+    payload: DocumentFromUrlRequest,
+    db: DbSession,
+    current_user: CurrentUser,
+    embedder: Embedder,
+    store: Vectors,
+) -> DocumentRead:
+    """Fetch a public http(s) URL and ingest its content into the index."""
+    try:
+        document = await document_service.create_document_from_url(
+            db,
+            workspace_id=workspace_id,
+            user_id=current_user.id,
+            url=str(payload.url),
+            embedder=embedder,
+            store=store,
+            filename=payload.filename,
+        )
+    except NotFoundError as exc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Workspace not found") from exc
+    except UrlFetchError as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
     return DocumentRead.model_validate(document)
 
 
@@ -61,7 +90,7 @@ async def list_documents(
     try:
         items = await document_service.list_for_workspace(db, workspace_id, current_user.id)
     except NotFoundError as exc:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Workspace not found") from exc
+        raise HTTPException(status.HTTP_404_NOT_FOUND, _WORKSPACE_NOT_FOUND) from exc
     return [DocumentRead.model_validate(d) for d in items]
 
 

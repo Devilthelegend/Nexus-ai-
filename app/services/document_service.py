@@ -20,6 +20,7 @@ from app.models.document import Document
 from app.models.enums import DocumentStatus
 from app.services import workspace_service
 from app.services.exceptions import NotFoundError
+from app.services.ingestion.fetcher import fetch_url
 from app.services.ingestion.pipeline import run_ingestion
 
 
@@ -92,6 +93,45 @@ async def create_document(
     if settings.ingest_eager:
         await run_ingestion(db, document, data, embedder, store, settings)
     return document
+
+
+async def create_document_from_url(
+    db: AsyncSession,
+    *,
+    workspace_id: uuid.UUID,
+    user_id: uuid.UUID,
+    url: str,
+    embedder: EmbeddingProvider,
+    store: VectorStore,
+    filename: str | None = None,
+    settings: Settings | None = None,
+) -> Document:
+    """Fetch a public URL and ingest it exactly like an uploaded file.
+
+    Membership is checked before any network call, and the download reuses the
+    same size cap as direct uploads. A :class:`UrlFetchError` from the fetcher
+    surfaces to the API layer as a client error.
+    """
+    settings = settings or get_settings()
+    await _require_membership(db, workspace_id, user_id)
+
+    fetched = await fetch_url(
+        url,
+        timeout=settings.url_fetch_timeout_seconds,
+        max_bytes=settings.max_upload_bytes,
+        filename=filename,
+    )
+    return await create_document(
+        db,
+        workspace_id=workspace_id,
+        user_id=user_id,
+        filename=fetched.filename,
+        mime_type=fetched.content_type,
+        data=fetched.data,
+        embedder=embedder,
+        store=store,
+        settings=settings,
+    )
 
 
 async def get_for_user(

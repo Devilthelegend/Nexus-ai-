@@ -81,6 +81,10 @@ class Settings(BaseSettings):
     upload_dir: str = "./var/uploads"
     max_upload_bytes: int = 50 * 1024 * 1024  # 50 MB
 
+    # Ingest-from-URL: fetch a public http(s) page/file and index it. The size
+    # cap reuses ``max_upload_bytes``; only the request timeout is separate.
+    url_fetch_timeout_seconds: float = 15.0
+
     # Chunking (character-based windows with overlap)
     chunk_size: int = 1000
     chunk_overlap: int = 150

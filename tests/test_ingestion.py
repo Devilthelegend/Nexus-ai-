@@ -1,5 +1,6 @@
 """Tests for the document ingestion pipeline and API."""
 
+import httpx
 import pytest
 from httpx import AsyncClient
 
@@ -44,6 +45,84 @@ async def test_upload_indexes_document(client: AsyncClient) -> None:
     assert body["status"] == "indexed"
     assert body["chunk_count"] >= 1
     assert body["error"] is None
+
+
+async def test_upload_csv_indexes(client: AsyncClient) -> None:
+    ws = await _workspace(client, "csv-owner@example.com")
+    csv_bytes = b"name,role\nAda Lovelace,mathematician\nAlan Turing,computer scientist\n"
+    files = {"file": ("people.csv", csv_bytes, "text/csv")}
+
+    response = await client.post(_docs_url(ws["workspace_id"]), files=files, headers=ws["headers"])
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["status"] == "indexed", body
+    assert body["chunk_count"] >= 1
+    assert body["error"] is None
+
+
+def _install_fetch_transport(monkeypatch, handler) -> None:
+    """Route the URL fetcher's AsyncClient through a MockTransport handler."""
+    from app.services.ingestion import fetcher as fetcher_mod
+
+    original = httpx.AsyncClient
+
+    def factory(*args, **kwargs):
+        kwargs["transport"] = httpx.MockTransport(handler)
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(fetcher_mod.httpx, "AsyncClient", factory)
+
+
+async def test_ingest_from_url_indexes_html(client: AsyncClient, monkeypatch) -> None:
+    ws = await _workspace(client, "url-owner@example.com")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        html = b"<html><body><h1>NexusAI</h1><p>URL ingestion works end to end.</p></body></html>"
+        return httpx.Response(200, content=html, headers={"content-type": "text/html"})
+
+    _install_fetch_transport(monkeypatch, handler)
+    response = await client.post(
+        f"{_docs_url(ws['workspace_id'])}/from-url",
+        json={"url": "https://example.com/article"},
+        headers=ws["headers"],
+    )
+    assert response.status_code == 201, response.text
+    body = response.json()
+    assert body["status"] == "indexed", body
+    assert body["chunk_count"] >= 1
+    assert body["filename"].endswith(".html")
+
+
+async def test_ingest_from_url_rejects_unsupported_type(client: AsyncClient, monkeypatch) -> None:
+    ws = await _workspace(client, "url-bad-owner@example.com")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200, content=b"\x00\x01binary", headers={"content-type": "application/octet-stream"}
+        )
+
+    _install_fetch_transport(monkeypatch, handler)
+    response = await client.post(
+        f"{_docs_url(ws['workspace_id'])}/from-url",
+        json={"url": "https://example.com/data"},
+        headers=ws["headers"],
+    )
+    assert response.status_code == 400, response.text
+
+
+async def test_ingest_from_url_handles_fetch_error(client: AsyncClient, monkeypatch) -> None:
+    ws = await _workspace(client, "url-err-owner@example.com")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(500, text="boom")
+
+    _install_fetch_transport(monkeypatch, handler)
+    response = await client.post(
+        f"{_docs_url(ws['workspace_id'])}/from-url",
+        json={"url": "https://example.com/broken"},
+        headers=ws["headers"],
+    )
+    assert response.status_code == 400, response.text
 
 
 async def test_upload_empty_file_rejected(client: AsyncClient) -> None:

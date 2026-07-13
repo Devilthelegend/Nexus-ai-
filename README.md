@@ -11,7 +11,7 @@
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-D71F00)
-![Tests](https://img.shields.io/badge/tests-81%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-85%20passing-brightgreen)
 ![AI](https://img.shields.io/badge/AI-runs%20offline%20(mock)-informational)
 
 NexusAI is a production-style backend that layers RAG, conversational chat and
@@ -27,9 +27,9 @@ purely through configuration.
 - 🔐 **Multi-tenant auth & isolation** — JWT access + rotating refresh tokens with
   server-side revocation, Argon2 password hashing, per-workspace RBAC; every
   query scoped by `workspace_id`.
-- 📄 **Document ingestion** — upload → extract (`txt`/`md`/`html`/`pdf`/`docx`) →
-  chunk → embed → index, with idempotent content checksums and a
-  dead-letter / replay path for failed documents.
+- 📄 **Document ingestion** — upload a file **or fetch a public URL** → extract
+  (`txt`/`md`/`html`/`csv`/`pdf`/`docx`) → chunk → embed → index, with idempotent
+  content checksums and a dead-letter / replay path for failed documents.
 - 🔎 **Hybrid RAG retrieval** — dense + keyword recall fused with Reciprocal Rank
   Fusion, reranked and packed into a token budget, returning inline **citations**.
 - 💬 **Streaming chat** — Server-Sent Events token streaming, persisted
@@ -120,8 +120,8 @@ Or bring up everything (API + services) with `docker compose up --build`.
 
 A self-contained single-page app is served at **`/ui`** from the same origin as
 the API (so it shares auth and needs no CORS). It covers register / login,
-workspace creation, document upload, and streaming chat with citations — enough
-to exercise the full RAG flow from a browser.
+workspace creation, document upload (file or **from a URL**), and streaming chat
+with citations — enough to exercise the full RAG flow from a browser.
 
 ## 📡 API overview
 
@@ -132,7 +132,7 @@ Every failure shares one envelope: `{ code, message, request_id, details }`.
 |---|---|
 | Auth | `POST /auth/register` · `/auth/login` · `/auth/refresh` · `/auth/logout` · `GET /auth/me` |
 | Workspaces | `POST` / `GET /workspaces` · `GET /workspaces/{id}` · `POST /workspaces/{id}/members` |
-| Documents | `POST /workspaces/{wid}/documents` (multipart) · list / get · `GET …/{id}/status` · `DELETE …/{id}` · `POST …/{id}/reprocess` |
+| Documents | `POST /workspaces/{wid}/documents` (multipart) · `POST …/documents/from-url` (fetch a public URL) · list / get · `GET …/{id}/status` · `DELETE …/{id}` · `POST …/{id}/reprocess` |
 | Conversations | `POST` / `GET …/conversations` · messages · `POST …/messages/stream` (SSE) |
 | Agents | `POST …/agent/runs` · `GET …/agent/runs` · `GET …/agent/runs/{id}` |
 | Ops | `GET /healthz` · `GET /readyz` · `GET /metrics` |
@@ -195,7 +195,7 @@ includes an evaluation gate (`tests/test_eval.py`) that asserts retrieval
 quality (recall@k / precision@k / MRR).
 
 ```bash
-pytest                 # full suite — 81 tests
+pytest                 # full suite — 85 tests
 ruff check .           # lint
 ruff format --check .  # formatting
 mypy app               # strict type-check
@@ -259,7 +259,7 @@ app/
 migrations/   Alembic env + versioned migrations 0001–0005
 deploy/       Kubernetes manifests + Terraform (AWS) skeleton
 load/         Locust + k6 load tests
-tests/        pytest suite (81 tests, offline)
+tests/        pytest suite (85 tests, offline)
 ```
 
 ## 🛣️ Production readiness & roadmap

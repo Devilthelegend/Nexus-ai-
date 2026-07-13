@@ -3,9 +3,16 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field
 
 from app.models.enums import DocumentStatus
+
+
+class DocumentFromUrlRequest(BaseModel):
+    """Payload for ingesting a document from a public ``http(s)`` URL."""
+
+    url: AnyHttpUrl
+    filename: str | None = Field(default=None, max_length=255)
 
 
 class DocumentRead(BaseModel):

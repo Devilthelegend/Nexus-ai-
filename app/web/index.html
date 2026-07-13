@@ -80,6 +80,10 @@ label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
     <h3>Documents</h3>
     <input id="file" type="file" />
     <button id="uploadBtn" class="secondary" style="margin-top:8px;width:100%">Upload &amp; index</button>
+    <div class="rowb" style="margin-top:8px">
+      <input id="docUrl" placeholder="https://example.com/page-or-file" />
+      <button id="urlBtn" class="secondary">From URL</button>
+    </div>
     <ul id="docs" class="docs"></ul>
     <div id="sideMsg" class="msg"></div>
   </aside>
@@ -197,6 +201,18 @@ async function uploadDoc() {
   } catch (e) { setMsg($("sideMsg"), e.message, "err"); }
 }
 
+async function ingestFromUrl() {
+  if (!state.ws) { setMsg($("sideMsg"), "Select a workspace first.", "err"); return; }
+  const url = $("docUrl").value.trim();
+  if (!url) { setMsg($("sideMsg"), "Enter a URL to ingest.", "err"); return; }
+  setMsg($("sideMsg"), "Fetching & indexing…");
+  try {
+    const d = await api(`/workspaces/${state.ws}/documents/from-url`, { method: "POST", body: { url } });
+    setMsg($("sideMsg"), `Indexed “${d.filename}” (${d.status}).`, "ok");
+    $("docUrl").value = ""; await loadDocs();
+  } catch (e) { setMsg($("sideMsg"), e.message, "err"); }
+}
+
 async function ensureConversation() {
   if (state.conv) return;
   const c = await api(`/workspaces/${state.ws}/conversations`, { method: "POST", body: { title: "Chat" } });
@@ -279,6 +295,7 @@ $("registerBtn").onclick = register;
 $("logoutBtn").onclick = logout;
 $("wsCreate").onclick = createWorkspace;
 $("uploadBtn").onclick = uploadDoc;
+$("urlBtn").onclick = ingestFromUrl;
 $("sendBtn").onclick = send;
 $("wsSelect").onchange = (e) => selectWorkspace(e.target.value);
 $("q").addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
