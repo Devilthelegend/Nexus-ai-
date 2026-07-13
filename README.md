@@ -4,10 +4,14 @@
 > get **grounded, cited answers** through Retrieval-Augmented Generation,
 > streaming chat, and tool-using agents.
 
+[![CI](https://github.com/Devilthelegend/Nexus-ai-/actions/workflows/ci.yml/badge.svg)](https://github.com/Devilthelegend/Nexus-ai-/actions/workflows/ci.yml)
+[![CD](https://github.com/Devilthelegend/Nexus-ai-/actions/workflows/cd.yml/badge.svg)](https://github.com/Devilthelegend/Nexus-ai-/actions/workflows/cd.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0-D71F00)
-![Tests](https://img.shields.io/badge/tests-76%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-81%20passing-brightgreen)
 ![AI](https://img.shields.io/badge/AI-runs%20offline%20(mock)-informational)
 
 NexusAI is a production-style backend that layers RAG, conversational chat and
@@ -255,7 +259,7 @@ app/
 migrations/   Alembic env + versioned migrations 0001–0005
 deploy/       Kubernetes manifests + Terraform (AWS) skeleton
 load/         Locust + k6 load tests
-tests/        pytest suite (76 tests, offline)
+tests/        pytest suite (81 tests, offline)
 ```
 
 ## 🛣️ Production readiness & roadmap
@@ -283,5 +287,4 @@ roadmap (none block local / demo use):
 
 ## 📄 License
 
-No license file is included yet. Add a `LICENSE` (e.g. MIT) before making the
-repository public if you want to permit reuse.
+Released under the [MIT License](LICENSE) — © 2026 Pratik Jagzap.
